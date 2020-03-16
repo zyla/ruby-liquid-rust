@@ -1,9 +1,9 @@
-RSpec.describe Liquid::Rust do
-  it "has a version number" do
-    expect(Liquid::Rust::VERSION).not_to be nil
-  end
+require 'spec_helper'
+require 'liquid/rust'
 
-  it "does something useful" do
-    expect(false).to eq(true)
+RSpec.describe Liquid::Rust do
+  it "returns template source" do
+    t = Liquid::Rust::Template.parse("source")
+    expect(t.source).to eq("source")
   end
 end

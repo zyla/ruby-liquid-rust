@@ -8,6 +8,8 @@ edition = "2018"
 
 [dependencies]
 rutie = "0.7.0"
+lazy_static = "*"
+liquid = { git = "https://github.com/cobalt-org/liquid-rust" }
 
 [lib]
 name = "liquid_rust"
