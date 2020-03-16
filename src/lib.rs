@@ -1,10 +1,12 @@
 #[macro_use] extern crate rutie;
 #[macro_use] extern crate lazy_static;
+extern crate liquid;
 
-use rutie::{Class, Object, RString, VM, AnyObject, Module};
+use rutie::{Object, RString, VM, AnyObject, Module, Hash, Fixnum};
 
 pub struct Template {
     source: String,
+    template: liquid::Template,
 }
 
 wrappable_struct!(Template, TemplateWrapper, TEMPLATE_WRAPPER);
@@ -20,19 +22,42 @@ methods!(
           map_err(|e| VM::raise_ex(e) ).
           unwrap();
 
-        let template = Template {
-            source: ruby_string.to_string()
+        let source = ruby_string.to_string();
+        let template = liquid::ParserBuilder::with_liquid()
+            .build().unwrap()
+            .parse(&source).unwrap();
+
+        let obj = Template {
+            source: source,
+            template: template,
         };
 
         Module::from_existing("Liquid")
         .get_nested_module("Rust")
         .get_nested_class("Template")
-        .wrap_data(template, &*TEMPLATE_WRAPPER)
+        .wrap_data(obj, &*TEMPLATE_WRAPPER)
     }
 
     fn pub_source() -> RString {
-        let template = _itself.get_data(&*TEMPLATE_WRAPPER);
-        RString::new_utf8(&template.source)
+        let obj = _itself.get_data(&*TEMPLATE_WRAPPER);
+        RString::new_utf8(&obj.source)
+    }
+
+    fn pub_render(ruby_globals: Hash) -> RString {
+        let obj = _itself.get_data(&*TEMPLATE_WRAPPER);
+
+        let mut globals = liquid::value::Object::new();
+        ruby_globals.unwrap().each(|key, value| {
+            if let Ok(key) = key.try_convert_to::<RString>() {
+                if let Ok(value) = value.try_convert_to::<Fixnum>() {
+                    globals.insert(key.to_string().into(), liquid::value::Value::scalar(value.to_i64() as f64));
+                }
+            }
+        });
+
+        let result = obj.template.render(&globals).unwrap();
+
+        RString::new_utf8(&result)
     }
 );
 
@@ -45,5 +70,6 @@ pub extern "C" fn Init_liquid_rust() {
     .define(|itself| {
         itself.def_self("parse", pub_parse);
         itself.def("source", pub_source);
+        itself.def("render", pub_render);
     });
 }
