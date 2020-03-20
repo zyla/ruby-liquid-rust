@@ -10,6 +10,7 @@ edition = "2018"
 rutie = "0.7.0"
 lazy_static = "*"
 liquid = "0.20.0-alpha"
+kstring = "0.1.0-alpha"
 
 [lib]
 name = "liquid_rust"
