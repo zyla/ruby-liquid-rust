@@ -23,7 +23,7 @@ methods!(
           unwrap();
 
         let source = ruby_string.to_string();
-        let template = liquid::ParserBuilder::with_liquid()
+        let template = liquid::ParserBuilder::with_stdlib()
             .build().unwrap()
             .parse(&source).unwrap();
 
@@ -46,11 +46,11 @@ methods!(
     fn pub_render(ruby_globals: Hash) -> RString {
         let obj = _itself.get_data(&*TEMPLATE_WRAPPER);
 
-        let mut globals = liquid::value::Object::new();
+        let mut globals = liquid::model::Object::new();
         ruby_globals.unwrap().each(|key, value| {
             if let Ok(key) = key.try_convert_to::<RString>() {
                 if let Ok(value) = value.try_convert_to::<Fixnum>() {
-                    globals.insert(key.to_string().into(), liquid::value::Value::scalar(value.to_i64() as f64));
+                    globals.insert(key.to_string().into(), liquid::model::to_value(&value.to_i64()).unwrap());
                 }
             }
         });
