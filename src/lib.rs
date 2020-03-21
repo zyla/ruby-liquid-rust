@@ -131,6 +131,12 @@ impl ObjectView for RubyObject {
 
     fn get<'k>(&'k self, index: &str) -> Option<&'k dyn ValueView> {
         println!("get {}", index);
+
+        // FIXME: This is wrong!
+        // The API doesn't allow us to return an owned `dyn ValueView` here. (Ideally we'd like
+        // ValueCow).
+        // Without changing it, we can either cache property lookups inside this object, or leak
+        // memory.
         Some(Box::leak(Box::new(RubyObject(self.0.protect_send("[]", &[RString::new_utf8(index).to_any_object()]).unwrap()))))
     }
 }
